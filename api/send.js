@@ -1,6 +1,29 @@
 const { setCors, handleOptions, json, readJsonBody, isAuthorized } = require("./_lib/http");
 const { listSubscriptions } = require("./_lib/redis");
 const { sendToRecord } = require("./_lib/push");
+const { getReportStyle } = require("./_lib/preferences");
+
+function payloadForRecord(body, record, audience) {
+  if (body.kind === "report" && body.variants) {
+    const style = getReportStyle(record.preferences);
+    const variant = body.variants[style] || body.variants.detailed;
+    if (variant) {
+      return {
+        title: variant.title || body.title,
+        body: variant.body || body.body || "",
+        url: body.url || "/",
+        tag: body.tag || `hsbi-${audience}`
+      };
+    }
+  }
+
+  return {
+    title: body.title,
+    body: body.body || "",
+    url: body.url || "/",
+    tag: body.tag || `hsbi-${audience}`
+  };
+}
 
 module.exports = async function handler(req, res) {
   if (handleOptions(req, res)) return;
@@ -14,16 +37,14 @@ module.exports = async function handler(req, res) {
 
   let records = await listSubscriptions(audience);
   records = records.filter((record) => record.preferences?.enabled !== false);
+  if (body.kind === "sale") {
+    records = records.filter((record) => record.preferences?.salesEnabled !== false);
+  }
   if (audience === "owner" && body.time) {
     records = records.filter((record) => (record.preferences?.times || []).includes(body.time));
   }
 
-  const results = await Promise.all(records.map((record) => sendToRecord(record, {
-    title: body.title,
-    body: body.body || "",
-    url: body.url || "/",
-    tag: body.tag || `hsbi-${audience}`
-  })));
+  const results = await Promise.all(records.map((record) => sendToRecord(record, payloadForRecord(body, record, audience))));
   return json(res, 200, {
     ok: true,
     audience,

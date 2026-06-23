@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const { setCors, handleOptions, json, readJsonBody } = require("./_lib/http");
 const { saveSubscription } = require("./_lib/redis");
+const { normalizePreferences } = require("./_lib/preferences");
 
 module.exports = async function handler(req, res) {
   if (handleOptions(req, res)) return;
@@ -15,10 +16,7 @@ module.exports = async function handler(req, res) {
   }
 
   const id = crypto.createHash("sha256").update(`${audience}:${subscription.endpoint}`).digest("hex");
-  const preferences = {
-    enabled: body.preferences?.enabled !== false,
-    times: Array.isArray(body.preferences?.times) ? body.preferences.times : []
-  };
+  const preferences = normalizePreferences(body.preferences);
   await saveSubscription(id, {
     audience,
     subscription,

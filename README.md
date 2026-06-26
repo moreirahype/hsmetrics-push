@@ -1,6 +1,6 @@
-# Hot Sales Push
+# HS Metrics Push
 
-Backend de Web Push do Hot Sales para deploy na Vercel.
+Backend de Web Push do HS Metrics para deploy na Vercel.
 
 ## Variáveis
 

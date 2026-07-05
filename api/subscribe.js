@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const { setCors, handleOptions, json, readJsonBody } = require("./_lib/http");
+const { setCors, handleOptions, json, readJsonBody, normalizeAudience } = require("./_lib/http");
 const { saveSubscription } = require("./_lib/redis");
 const { normalizePreferences } = require("./_lib/preferences");
 
@@ -9,7 +9,7 @@ module.exports = async function handler(req, res) {
   if (req.method !== "POST") return json(res, 405, { ok: false, error: "Método inválido." });
 
   const body = readJsonBody(req);
-  const audience = body.audience === "sheila" ? "sheila" : body.audience === "owner" ? "owner" : "";
+  const audience = normalizeAudience(body.audience);
   const subscription = body.subscription;
   if (!audience || !subscription || !subscription.endpoint || !subscription.keys) {
     return json(res, 400, { ok: false, error: "Assinatura inválida." });

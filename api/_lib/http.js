@@ -39,4 +39,12 @@ function isAuthorized(req) {
   return req.headers.authorization === `Bearer ${expected}`;
 }
 
-module.exports = { setCors, handleOptions, json, readJsonBody, isAuthorized };
+// Audiências válidas: multi-tenant ("owner-<workspace>", "att-<atendente>") e legadas ("owner", "sheila").
+function normalizeAudience(value) {
+  const audience = String(value || "").trim().toLowerCase();
+  if (audience === "owner" || audience === "sheila") return audience;
+  if (/^(owner|att)-[a-z0-9-]{6,64}$/.test(audience)) return audience;
+  return "";
+}
+
+module.exports = { setCors, handleOptions, json, readJsonBody, isAuthorized, normalizeAudience };
